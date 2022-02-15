@@ -6,9 +6,15 @@ module.exports = merge(common, {
     mode: 'development',
     devtool: 'eval-source-map',
     devServer: {
-        static: {
-            directory: path.join(__dirname, '../../dist/client'),
-        },
+        static: [
+            {
+                directory: path.join(__dirname, '../../dist/client'),
+            },
+            {
+                directory: path.join(__dirname, '../../dist/img'),
+                publicPath: '/img',
+            },
+        ],
         hot: true,
     },
 })
