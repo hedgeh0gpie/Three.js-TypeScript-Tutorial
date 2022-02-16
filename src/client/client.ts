@@ -1,12 +1,15 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader'
 import Stats from 'three/examples/jsm/libs/stats.module'
-import { GUI } from 'dat.gui'
-
-
 
 const scene = new THREE.Scene()
 scene.add(new THREE.AxesHelper(5))
+
+const light = new THREE.PointLight()
+light.position.set(2.5, 7.5, 15)
+scene.add(light)
 
 const camera = new THREE.PerspectiveCamera(
     75,
@@ -20,42 +23,66 @@ const renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-new OrbitControls(camera, renderer.domElement)
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.enableDamping = true
 
-const boxGeometry = new THREE.BoxGeometry()
-const sphereGeometry = new THREE.SphereGeometry()
-const icosahedronGeometry = new THREE.IcosahedronGeometry(1, 0)
-const planeGeometry = new THREE.PlaneGeometry()
-const torusKnotGeometry = new THREE.TorusKnotGeometry()
+const mtlLoader = new MTLLoader()
+mtlLoader.load(
+    'models/monkey.mtl',
+    (materials) => {
+        materials.preload()
+        // console.log(materials)
+        const objLoader = new OBJLoader()
+        objLoader.setMaterials(materials)
+        objLoader.load(
+            'models/monkey.obj',
+            (object) => {
+                scene.add(object)
+            },
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+            },
+            (error) => {
+                console.log('An error happened')
+            }
+        )
+    },
+    (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+    },
+    (error) => {
+        console.log('An error happened')
+    }
+)
 
-const material = new THREE.MeshBasicMaterial() //{ color: 0x00ff00, wireframe: true })
-
-const texture = new THREE.TextureLoader().load("img/grid.png")
-material.map = texture
-const envTexture = new THREE.CubeTextureLoader().load(["img/px_50.png", "img/nx_50.png", "img/py_50.png", "img/ny_50.png", "img/pz_50.png", "img/nz_50.png"])
-envTexture.mapping = THREE.CubeReflectionMapping
-// envTexture.mapping = THREE.CubeRefractionMapping
-material.envMap = envTexture
-
-const cube = new THREE.Mesh(boxGeometry, material)
-cube.position.x = 5
-scene.add(cube)
-
-const sphere = new THREE.Mesh(sphereGeometry, material)
-sphere.position.x = 3
-scene.add(sphere)
-
-const icosahedron = new THREE.Mesh(icosahedronGeometry, material)
-icosahedron.position.x = 0
-scene.add(icosahedron)
-
-const plane = new THREE.Mesh(planeGeometry, material)
-plane.position.x = -2
-scene.add(plane)
-
-const torusKnot = new THREE.Mesh(torusKnotGeometry, material)
-torusKnot.position.x = -5
-scene.add(torusKnot)
+mtlLoader.load(
+    'models/monkeyTextured.mtl',
+    (materials) => {
+        materials.preload()
+        // console.log(materials)
+        const objLoader = new OBJLoader()
+        objLoader.setMaterials(materials)
+        objLoader.load(
+            'models/monkeyTextured.obj',
+            (object) => {
+                object.position.x = 2.5
+                scene.add(object)
+            },
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+            },
+            (error) => {
+                console.log('An error happened')
+            }
+        )
+    },
+    (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+    },
+    (error) => {
+        console.log('An error happened')
+    }
+)
 
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {
@@ -68,55 +95,10 @@ function onWindowResize() {
 const stats = Stats()
 document.body.appendChild(stats.dom)
 
-const options = {
-    side: {
-        FrontSide: THREE.FrontSide,
-        BackSide: THREE.BackSide,
-        DoubleSide: THREE.DoubleSide,
-    },
-    combine: {
-        MultiplyOperation: THREE.MultiplyOperation,
-        MixOperation: THREE.MixOperation,
-        AddOperation: THREE.AddOperation,
-    },
-}
-
-const gui = new GUI()
-const materialFolder = gui.addFolder('THREE.Material')
-materialFolder.add(material, 'transparent')
-materialFolder.add(material, 'opacity', 0, 1, 0.01)
-materialFolder.add(material, 'depthTest')
-materialFolder.add(material, 'depthWrite')
-materialFolder
-    .add(material, 'alphaTest', 0, 1, 0.01)
-    .onChange(() => updateMaterial())
-materialFolder.add(material, 'visible')
-materialFolder
-    .add(material, 'side', options.side)
-    .onChange(() => updateMaterial())
-materialFolder.open()
-
-const data = {
-    color: material.color.getHex(),
-}
-
-const meshBasicMaterialFolder = gui.addFolder('THREE.MeshBasicMaterial')
-meshBasicMaterialFolder.addColor(data, 'color').onChange(() => { material.color.setHex(Number(data.color.toString().replace('#', '0x'))) })
-meshBasicMaterialFolder.add(material, 'wireframe')
-// meshBasicMaterialFolder.add(material, 'wireframeLinewidth', 0, 10)
-meshBasicMaterialFolder.add(material, 'combine', options.combine).onChange(() => updateMaterial())
-meshBasicMaterialFolder.add(material, 'reflectivity', 0, 1)
-meshBasicMaterialFolder.add(material, 'refractionRatio', 0, 1)
-meshBasicMaterialFolder.open()
-
-function updateMaterial() {
-    material.side = Number(material.side)
-    material.combine = Number(material.combine)
-    material.needsUpdate = true
-}
-
 function animate() {
     requestAnimationFrame(animate)
+
+    controls.update()
 
     render()
 
