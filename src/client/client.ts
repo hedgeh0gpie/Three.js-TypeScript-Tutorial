@@ -1,15 +1,17 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import Stats from 'three/examples/jsm/libs/stats.module'
 
 const scene = new THREE.Scene()
 scene.add(new THREE.AxesHelper(5))
 
 const light = new THREE.PointLight()
-light.position.set(2.5, 7.5, 15)
+light.position.set(0.8, 1.4, 1.0)
 scene.add(light)
+
+const ambientLight = new THREE.AmbientLight()
+scene.add(ambientLight)
 
 const camera = new THREE.PerspectiveCamera(
     75,
@@ -17,7 +19,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     1000
 )
-camera.position.z = 3
+camera.position.set(0.8, 1.4, 1.0)
 
 const renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -25,62 +27,31 @@ document.body.appendChild(renderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
+controls.target.set(0, 1, 0)
 
-const mtlLoader = new MTLLoader()
-mtlLoader.load(
-    'models/monkey.mtl',
-    (materials) => {
-        materials.preload()
-        // console.log(materials)
-        const objLoader = new OBJLoader()
-        objLoader.setMaterials(materials)
-        objLoader.load(
-            'models/monkey.obj',
-            (object) => {
-                scene.add(object)
-            },
-            (xhr) => {
-                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-            },
-            (error) => {
-                console.log('An error happened')
+const material = new THREE.MeshNormalMaterial()
+
+const fbxLoader = new FBXLoader()
+fbxLoader.load(
+    'models/xbot.fbx',
+    (object) => {
+        object.traverse(function (child) {
+            console.log(child.name)
+            if ((child as THREE.Mesh).isMesh) {
+                (child as THREE.Mesh).material = material
+                // if ((child as THREE.Mesh).material) {
+                //     ((child as THREE.Mesh).material as THREE.MeshBasicMaterial).transparent = false
+                // }
             }
-        )
+        })
+        object.scale.set(.01, .01, .01)
+        scene.add(object)
     },
     (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
     },
     (error) => {
-        console.log('An error happened')
-    }
-)
-
-mtlLoader.load(
-    'models/monkeyTextured.mtl',
-    (materials) => {
-        materials.preload()
-        // console.log(materials)
-        const objLoader = new OBJLoader()
-        objLoader.setMaterials(materials)
-        objLoader.load(
-            'models/monkeyTextured.obj',
-            (object) => {
-                object.position.x = 2.5
-                scene.add(object)
-            },
-            (xhr) => {
-                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-            },
-            (error) => {
-                console.log('An error happened')
-            }
-        )
-    },
-    (xhr) => {
-        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-    },
-    (error) => {
-        console.log('An error happened')
+        console.log(error)
     }
 )
 
